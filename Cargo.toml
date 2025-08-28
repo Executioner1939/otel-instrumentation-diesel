@@ -1,11 +1,11 @@
 [package]
-name = "diesel-tracing"
-version = "0.3.1"
-authors = ["John Children <john.children@quantinuum.com>"]
+name = "diesel-tracing-otel"
+version = "0.3.2"
+authors = ["John Children <john.children@quantinuum.com>", "Richard Peters <shadowrhyder@gmail.com>"]
 license = "MIT"
 edition = "2021"
 description = "Connection telemetry middleware for diesel and tracing"
-repository = "https://github.com/CQCL/diesel-tracing"
+repository = "https://github.com/Executioner1939/diesel-tracing"
 readme = "README.md"
 keywords = ["diesel", "logging", "tracing", "database", "opentelemetry"]
 
@@ -17,7 +17,8 @@ default = []
 
 statement-fields = []
 mysql = ["diesel/mysql"]
-postgres = ["diesel/postgres", "diesel/network-address", "ipnetwork"]
+postgres = ["diesel/postgres", "ipnetwork"]
+postgres-network-address = ["diesel/postgres", "diesel/network-address"]
 sqlite = ["diesel/sqlite"]
 r2d2 = ["diesel/r2d2"]
 

@@ -27,10 +27,16 @@ define_sql_function!(fn inet_server_port() -> diesel::sql_types::Integer);
 // db.version
 define_sql_function!(fn version() -> diesel::sql_types::Text);
 
+#[cfg(feature = "ipnetwork")]
+use ipnetwork::IpNetwork;
+
+#[cfg(not(feature = "ipnetwork"))]
+use std::net::IpAddr as IpNetwork;
+
 #[derive(Queryable, Clone, Debug, PartialEq)]
 struct PgConnectionInfo {
     current_database: String,
-    inet_server_addr: ipnetwork::IpNetwork,
+    inet_server_addr: IpNetwork,
     inet_server_port: i32,
     version: String,
 }
