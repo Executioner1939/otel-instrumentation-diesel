@@ -1,6 +1,6 @@
 [package]
 name = "diesel-tracing-otel"
-version = "0.3.3"
+version = "0.3.4"
 authors = ["John Children <john.children@quantinuum.com>", "Richard Peters <shadowrhyder@gmail.com>"]
 license = "MIT"
 edition = "2021"
@@ -18,7 +18,6 @@ default = []
 statement-fields = []
 mysql = ["diesel/mysql"]
 postgres = ["diesel/postgres", "ipnetwork"]
-postgres-network-address = ["diesel/postgres", "diesel/network-address"]
 sqlite = ["diesel/sqlite"]
 r2d2 = ["diesel/r2d2"]
 
