@@ -27,10 +27,10 @@ define_sql_function!(fn inet_server_port() -> diesel::sql_types::Integer);
 // db.version
 define_sql_function!(fn version() -> diesel::sql_types::Text);
 
-#[cfg(feature = "ipnetwork")]
+#[cfg(feature = "postgres")]
 use ipnetwork::IpNetwork;
 
-#[cfg(not(feature = "ipnetwork"))]
+#[cfg(feature = "postgres-network-address")]
 use std::net::IpAddr as IpNetwork;
 
 #[derive(Queryable, Clone, Debug, PartialEq)]

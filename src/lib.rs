@@ -112,7 +112,7 @@ passwords
 
 #[cfg(feature = "mysql")]
 pub mod mysql;
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres-network-address"))]
 pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
