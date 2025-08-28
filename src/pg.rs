@@ -30,8 +30,7 @@ define_sql_function!(fn version() -> diesel::sql_types::Text);
 
 use ipnetwork::IpNetwork;
 
-#[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Queryable, Clone, Debug, PartialEq)]
 struct PgConnectionInfo {
     current_database: String,
     inet_server_addr: IpNetwork,
