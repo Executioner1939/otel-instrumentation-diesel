@@ -5,6 +5,7 @@ use diesel::connection::{
 };
 use diesel::connection::{Instrumentation, LoadConnection, TransactionManager};
 use diesel::deserialize::Queryable;
+use diesel::prelude::Selectable;
 use diesel::dsl::Update;
 use diesel::expression::{is_aggregate, MixedAggregates, QueryMetadata, ValidGrouping};
 use diesel::migration::{MigrationConnection, CREATE_MIGRATIONS_TABLE};
@@ -29,7 +30,8 @@ define_sql_function!(fn version() -> diesel::sql_types::Text);
 
 use ipnetwork::IpNetwork;
 
-#[derive(Queryable, Clone, Debug, PartialEq)]
+#[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 struct PgConnectionInfo {
     current_database: String,
     inet_server_addr: IpNetwork,
