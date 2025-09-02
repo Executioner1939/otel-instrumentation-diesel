@@ -99,12 +99,14 @@ impl Connection for InstrumentedMysqlConnection {
 }
 
 impl LoadConnection<DefaultLoadingMode> for InstrumentedMysqlConnection {
-    type Cursor<'conn, 'query> = <MysqlConnection as LoadConnection<DefaultLoadingMode>>::Cursor<'conn, 'query>
-        where
-            Self: 'conn;
-    type Row<'conn, 'query> = <MysqlConnection as LoadConnection<DefaultLoadingMode>>::Row<'conn, 'query>
-        where
-            Self: 'conn;
+    type Cursor<'conn, 'query>
+        = <MysqlConnection as LoadConnection<DefaultLoadingMode>>::Cursor<'conn, 'query>
+    where
+        Self: 'conn;
+    type Row<'conn, 'query>
+        = <MysqlConnection as LoadConnection<DefaultLoadingMode>>::Row<'conn, 'query>
+    where
+        Self: 'conn;
 
     #[cfg_attr(
         feature = "statement-fields",
