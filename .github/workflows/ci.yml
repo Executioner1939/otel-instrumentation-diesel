@@ -1,4 +1,4 @@
-name: Release
+name: CI
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'v*.*.*'
       - 'v*.*.*-*'
   pull_request:
-    branches: [main, master]
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -30,7 +30,7 @@ env:
   CARGO_BUILD_JOBS: -1
 
 jobs:
-  # Linting job
+  # Linting job - runs on tags and PRs
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -65,7 +65,7 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-features --all-targets -- -D warnings
 
-  # Check job
+  # Check job - runs on tags and PRs
   check:
     name: Check
     runs-on: ubuntu-latest
@@ -93,26 +93,22 @@ jobs:
       - name: Run cargo check
         run: cargo check --all-features --all-targets
 
-  # Tests job
+  # Tests job with PostgreSQL - runs on tags and PRs
   test:
     name: Test
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: timescale/timescaledb:latest-pg15
+        image: postgres:11
         env:
-          POSTGRES_PASSWORD: postgres
           POSTGRES_USER: postgres
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
         ports:
           - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     env:
-      POSTGRESQL_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      POSTGRESQL_URL: postgres://postgres:postgres@localhost:5432/postgres
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -141,9 +137,8 @@ jobs:
             sleep 2
           done
 
-      - name: Setup TimescaleDB
-        run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS timescaledb;"
+      - name: Build
+        run: cargo build --all-features --verbose
 
       - name: Run tests
         run: |
@@ -153,7 +148,7 @@ jobs:
       - name: Run doc tests
         run: cargo test --doc --all-features
 
-  # Documentation generation job
+  # Documentation generation job - runs on tags and PRs
   docs:
     name: Generate Documentation
     runs-on: ubuntu-latest
@@ -182,7 +177,7 @@ jobs:
       - name: Test documentation examples
         run: cargo test --doc --all-features
 
-  # Compile job
+  # Compile job - runs on tags and PRs
   compile:
     name: Compile
     runs-on: ${{ matrix.os }}
@@ -229,7 +224,7 @@ jobs:
           cargo build --release --all-features --target ${{ matrix.target }}
         shell: bash
 
-  # Publish to crates.io
+  # Publish to crates.io - ONLY runs on tags
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
@@ -287,7 +282,7 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-  # Create GitHub Release
+  # Create GitHub Release - ONLY runs on tags
   github-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
@@ -318,7 +313,7 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           
           # Create release notes header
-          echo "## diesel-timescaledb $VERSION" > RELEASE_NOTES.md
+          echo "## otel-instrumentation-diesel $VERSION" > RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "### What's Changed" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
@@ -326,15 +321,15 @@ jobs:
           # Try to extract changes from CHANGELOG.md if it exists
           if [ -f CHANGELOG.md ]; then
             # Extract section for this version
-            sed -n "/## $VERSION/,/## [0-9]/p" CHANGELOG.md | sed '1d;$d' >> RELEASE_NOTES.md || echo "- Release $VERSION of diesel-timescaledb" >> RELEASE_NOTES.md
+            sed -n "/## $VERSION/,/## [0-9]/p" CHANGELOG.md | sed '1d;$d' >> RELEASE_NOTES.md || echo "- Release $VERSION of otel-instrumentation-diesel" >> RELEASE_NOTES.md
           else
             # Generate changelog from git commits
             if command -v git-cliff &> /dev/null; then
-              git-cliff --latest --strip all >> RELEASE_NOTES.md || echo "- Release $VERSION of diesel-timescaledb" >> RELEASE_NOTES.md
+              git-cliff --latest --strip all >> RELEASE_NOTES.md || echo "- Release $VERSION of otel-instrumentation-diesel" >> RELEASE_NOTES.md
             else
               # Fallback to git log
               echo "### Commits" >> RELEASE_NOTES.md
-              git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> RELEASE_NOTES.md || echo "- Release $VERSION of diesel-timescaledb" >> RELEASE_NOTES.md
+              git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> RELEASE_NOTES.md || echo "- Release $VERSION of otel-instrumentation-diesel" >> RELEASE_NOTES.md
             fi
           fi
           
@@ -342,11 +337,11 @@ jobs:
           echo "### Installation" >> RELEASE_NOTES.md
           echo '```toml' >> RELEASE_NOTES.md
           echo "[dependencies]" >> RELEASE_NOTES.md
-          echo "diesel-timescaledb = \"${VERSION#v}\"" >> RELEASE_NOTES.md
+          echo "otel-instrumentation-diesel = \"${VERSION#v}\"" >> RELEASE_NOTES.md
           echo '```' >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "### Documentation" >> RELEASE_NOTES.md
-          echo "- [API Documentation](https://docs.rs/diesel-timescaledb/${VERSION#v})" >> RELEASE_NOTES.md
+          echo "- [API Documentation](https://docs.rs/otel-instrumentation-diesel/${VERSION#v})" >> RELEASE_NOTES.md
           echo "- [README](https://github.com/${{ github.repository }}/blob/${VERSION}/README.md)" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$(git describe --tags --abbrev=0 HEAD^)...${VERSION}" >> RELEASE_NOTES.md
