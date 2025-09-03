@@ -25,6 +25,7 @@ the `diesel` crate. For example, with the `postgres` feature flag:
 ```
 #[cfg(feature = "postgres")]
 {
+    use diesel::connection::Connection;
     use otel_instrumentation_diesel::pg::InstrumentedPgConnection;
 
     let conn = InstrumentedPgConnection::establish("postgresql://example");
