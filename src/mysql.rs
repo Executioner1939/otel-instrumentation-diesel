@@ -10,6 +10,7 @@ use diesel::mysql::{Mysql, MysqlConnection};
 use diesel::query_builder::{AsChangeset, IntoUpdateTarget, Query, QueryFragment, QueryId};
 use diesel::query_dsl::methods::{ExecuteDsl, FindDsl};
 use diesel::query_dsl::{LoadQuery, UpdateAndFetchResults};
+#[cfg(feature = "r2d2")]
 use diesel::r2d2::R2D2Connection;
 use diesel::result::{ConnectionResult, QueryResult};
 use diesel::RunQueryDsl;

@@ -4,6 +4,11 @@ All changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-09-03
+### Changed
+- Renamed crate from `diesel-tracing-otel` to `otel-instrumentation-diesel` for better naming consistency
+- Updated package description to "OpenTelemetry instrumentation for Diesel ORM"
+
 ## [0.3.1] - 2024-11-11
 ### Fixed
 - Corrected the `R2D2Connection` import for the `sqlite` feature flag to be behind the `r2d2` feature flag.
@@ -95,3 +100,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.5]: https://crates.io/crates/diesel-tracing/0.2.5
 [0.3.0]: https://crates.io/crates/diesel-tracing/0.3.0
 [0.3.1]: https://crates.io/crates/diesel-tracing/0.3.1
+[0.5.0]: https://crates.io/crates/otel-instrumentation-diesel/0.5.0

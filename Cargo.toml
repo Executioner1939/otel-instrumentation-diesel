@@ -1,11 +1,11 @@
 [package]
-name = "diesel-tracing-otel"
+name = "otel-instrumentation-diesel"
 version = "0.5.0"
 authors = ["John Children <john.children@quantinuum.com>", "Richard Peters <shadowrhyder@gmail.com>"]
 license = "MIT"
 edition = "2021"
-description = "Connection telemetry middleware for diesel and tracing"
-repository = "https://github.com/Executioner1939/diesel-tracing"
+description = "OpenTelemetry instrumentation for Diesel ORM"
+repository = "https://github.com/hermes-capital-io/hermes-platform"
 readme = "README.md"
 keywords = ["diesel", "logging", "tracing", "database", "opentelemetry"]
 
@@ -23,7 +23,7 @@ r2d2 = ["diesel/r2d2"]
 
 [dependencies]
 diesel = { version = "2.2.12", features = ["i-implement-a-third-party-backend-and-opt-into-breaking-changes"], default-features = false }
-ipnetwork = { version = "0.21.1", optional = true }
+ipnetwork = { version = "0.20.0", optional = true }
 tracing = "0.1.41"
 
 [dev-dependencies]

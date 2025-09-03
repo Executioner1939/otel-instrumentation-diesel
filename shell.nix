@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
-  name = "diesel-tracing-dev-env";
+  name = "otel-instrumentation-diesel-dev-env";
   buildInputs = with pkgs; [
     pkg-config
     postgresql

@@ -1,10 +1,10 @@
 ![Maintenance](https://img.shields.io/badge/maintenance-experimental-blue.svg)
 
-# diesel-tracing-otel
+# otel-instrumentation-diesel
 
-> **Note**: This is a fork of the original [`diesel-tracing`](https://github.com/CQCL/diesel-tracing) crate, published as `diesel-tracing-otel` to provide compatibility with modern Diesel versions and improved OpenTelemetry support.
+> **Note**: This is a fork of the original [`diesel-tracing`](https://github.com/CQCL/diesel-tracing) crate, renamed to `otel-instrumentation-diesel` to provide compatibility with modern Diesel versions and improved OpenTelemetry support.
 
-`diesel-tracing-otel` provides connection structures that can be used as drop in
+`otel-instrumentation-diesel` provides connection structures that can be used as drop in
 replacements for diesel connections with extra tracing and logging.
 
 ## Changes from Original
@@ -25,19 +25,19 @@ database driver to support. Just as in diesel configure this in your
 
 ```toml
 [dependencies]
-diesel-tracing-otel = { version = "0.4.0", features = ["<postgres|mysql|sqlite>"] }
+otel-instrumentation-diesel = { version = "0.5.0", features = ["<postgres|mysql|sqlite>"] }
 ```
 
 For PostgreSQL with network address support:
 ```toml
 [dependencies]
 diesel = { version = "2.2.12", features = ["postgres", "network-address"] }
-diesel-tracing-otel = { version = "0.4.0", features = ["postgres", "r2d2"] }
+otel-instrumentation-diesel = { version = "0.5.0", features = ["postgres", "r2d2"] }
 ```
 
 ## Establishing a connection
 
-`diesel-tracing-otel` has several instrumented connection structs that wrap the underlying
+`otel-instrumentation-diesel` has several instrumented connection structs that wrap the underlying
 `diesel` implementations of the connection. As these structs also implement the
 `diesel::Connection` trait, establishing a connection is done in the same way as
 the `diesel` crate. For example, with the `postgres` feature flag:
@@ -45,7 +45,7 @@ the `diesel` crate. For example, with the `postgres` feature flag:
 ```rust
 #[cfg(feature = "postgres")]
 {
-    use diesel_tracing_otel::pg::InstrumentedPgConnection;
+    use otel_instrumentation_diesel::pg::InstrumentedPgConnection;
 
     let conn = InstrumentedPgConnection::establish("postgresql://example");
 }
@@ -78,12 +78,12 @@ Instrumented version.
 
 ### Connection Pooling
 
-`diesel-tracing-otel` supports the `r2d2` connection pool, through the `r2d2`
+`otel-instrumentation-diesel` supports the `r2d2` connection pool, through the `r2d2`
 feature flag. See `diesel::r2d2` for details of usage.
 
 ## Migration from Original
 
-To migrate from the original `diesel-tracing` crate:
+To migrate from the original `diesel-tracing` crate or `diesel-tracing-otel`:
 
 1. **Update your `Cargo.toml`**:
    ```toml
@@ -91,7 +91,7 @@ To migrate from the original `diesel-tracing` crate:
    diesel-tracing = { version = "0.3.1", features = ["postgres", "r2d2"] }
    
    # After
-   diesel-tracing-otel = { version = "0.4.0", features = ["postgres", "r2d2"] }
+   otel-instrumentation-diesel = { version = "0.5.0", features = ["postgres", "r2d2"] }
    ```
 
 2. **Update your imports**:
@@ -100,7 +100,7 @@ To migrate from the original `diesel-tracing` crate:
    use diesel_tracing::pg::InstrumentedPgConnection;
    
    // After
-   use diesel_tracing_otel::pg::InstrumentedPgConnection;
+   use otel_instrumentation_diesel::pg::InstrumentedPgConnection;
    ```
 
 3. **Ensure Diesel compatibility**:

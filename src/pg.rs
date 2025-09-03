@@ -11,6 +11,7 @@ use diesel::migration::{MigrationConnection, CREATE_MIGRATIONS_TABLE};
 use diesel::pg::{GetPgMetadataCache, Pg, PgConnection, PgRowByRowLoadingMode, TransactionBuilder};
 use diesel::query_builder::{AsChangeset, IntoUpdateTarget, Query, QueryFragment, QueryId};
 use diesel::query_dsl::{LoadQuery, UpdateAndFetchResults};
+#[cfg(feature = "r2d2")]
 use diesel::r2d2::R2D2Connection;
 use diesel::result::{ConnectionError, ConnectionResult, QueryResult};
 use diesel::{define_sql_function, sql_query, RunQueryDsl};
@@ -111,7 +112,7 @@ impl Connection for InstrumentedPgConnection {
         let mut conn = PgConnection::establish(database_url)?;
 
         debug!("querying postgresql connection information");
-        let info: PgConnectionInfo = select((
+        let (current_database, inet_server_addr, inet_server_port, version): (String, IpNetwork, i32, String) = select((
             current_database(),
             inet_server_addr(),
             inet_server_port(),
@@ -119,6 +120,13 @@ impl Connection for InstrumentedPgConnection {
         ))
         .get_result(&mut conn)
         .map_err(ConnectionError::CouldntSetupConfiguration)?;
+        
+        let info = PgConnectionInfo {
+            current_database,
+            inet_server_addr,
+            inet_server_port,
+            version,
+        };
 
         let span = tracing::Span::current();
         span.record("db.name", info.current_database.as_str());

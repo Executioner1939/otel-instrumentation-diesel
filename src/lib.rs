@@ -1,6 +1,6 @@
 /*!
-`diesel-tracing` provides connection structures that can be used as drop in
-replacements for diesel connections with extra tracing and logging.
+`otel-instrumentation-diesel` provides connection structures that can be used as drop in
+replacements for diesel connections with extra OpenTelemetry tracing and logging.
 
 # Usage
 
@@ -12,12 +12,12 @@ database driver to support. Just as in diesel configure this in your
 
 ```toml
 [dependencies]
-diesel-tracing = { version = "<version>", features = ["<postgres|mysql|sqlite>"] }
+otel-instrumentation-diesel = { version = "<version>", features = ["<postgres|mysql|sqlite>"] }
 ```
 
 # Establishing a connection
 
-`diesel-tracing` has several instrumented connection structs that wrap the underlying
+`otel-instrumentation-diesel` has several instrumented connection structs that wrap the underlying
 `diesel` implementations of the connection. As these structs also implement the
 `diesel::Connection` trait, establishing a connection is done in the same way as
 the `diesel` crate. For example, with the `postgres` feature flag:
@@ -25,7 +25,7 @@ the `diesel` crate. For example, with the `postgres` feature flag:
 ```
 #[cfg(feature = "postgres")]
 {
-    use diesel_tracing::pg::InstrumentedPgConnection;
+    use otel_instrumentation_diesel::pg::InstrumentedPgConnection;
 
     let conn = InstrumentedPgConnection::establish("postgresql://example");
 }
@@ -58,7 +58,7 @@ Instrumented version.
 
 ## Connection Pooling
 
-`diesel-tracing` supports the `r2d2` connection pool, through the `r2d2`
+`otel-instrumentation-diesel` supports the `r2d2` connection pool, through the `r2d2`
 feature flag. See `diesel::r2d2` for details of usage.
 
 # Notes
