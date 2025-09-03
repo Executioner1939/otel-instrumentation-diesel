@@ -1,6 +1,6 @@
 [package]
 name = "otel-instrumentation-diesel"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["John Children <john.children@quantinuum.com>", "Richard Peters <shadowrhyder@gmail.com>"]
 license = "MIT"
 edition = "2021"
