@@ -4,7 +4,6 @@ use diesel::connection::{
     MultiConnectionHelper, SimpleConnection,
 };
 use diesel::connection::{Instrumentation, LoadConnection, TransactionManager};
-use diesel::deserialize::Queryable;
 use diesel::dsl::Update;
 use diesel::expression::{is_aggregate, MixedAggregates, QueryMetadata, ValidGrouping};
 use diesel::migration::{MigrationConnection, CREATE_MIGRATIONS_TABLE};
@@ -22,7 +21,7 @@ use tracing::{debug, field, instrument};
 // db.name
 define_sql_function!(fn current_database() -> diesel::sql_types::Text);
 // net.peer.ip
-define_sql_function!(fn inet_server_addr() -> diesel::sql_types::Inet);
+define_sql_function!(fn inet_server_addr() -> diesel::sql_types::Nullable<diesel::sql_types::Inet>);
 // net.peer.port
 define_sql_function!(fn inet_server_port() -> diesel::sql_types::Integer);
 // db.version
@@ -30,10 +29,10 @@ define_sql_function!(fn version() -> diesel::sql_types::Text);
 
 use ipnetwork::IpNetwork;
 
-#[derive(Queryable, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 struct PgConnectionInfo {
     current_database: String,
-    inet_server_addr: IpNetwork,
+    inet_server_addr: Option<IpNetwork>,
     inet_server_port: i32,
     version: String,
 }
@@ -75,7 +74,7 @@ impl SimpleConnection for InstrumentedPgConnection {
             db.system="postgresql",
             db.version=%self.info.version,
             otel.kind="client",
-            net.peer.ip=%self.info.inet_server_addr,
+            net.peer.ip=%self.peer_ip_str(),
             net.peer.port=%self.info.inet_server_port,
         ),
         skip(self, query),
@@ -112,7 +111,12 @@ impl Connection for InstrumentedPgConnection {
         let mut conn = PgConnection::establish(database_url)?;
 
         debug!("querying postgresql connection information");
-        let (current_database, inet_server_addr, inet_server_port, version): (String, IpNetwork, i32, String) = select((
+        let (current_database, inet_server_addr, inet_server_port, version): (
+            String,
+            Option<IpNetwork>,
+            i32,
+            String,
+        ) = select((
             current_database(),
             inet_server_addr(),
             inet_server_port(),
@@ -120,7 +124,7 @@ impl Connection for InstrumentedPgConnection {
         ))
         .get_result(&mut conn)
         .map_err(ConnectionError::CouldntSetupConfiguration)?;
-        
+
         let info = PgConnectionInfo {
             current_database,
             inet_server_addr,
@@ -131,7 +135,9 @@ impl Connection for InstrumentedPgConnection {
         let span = tracing::Span::current();
         span.record("db.name", info.current_database.as_str());
         span.record("db.version", info.version.as_str());
-        span.record("net.peer.ip", format!("{}", info.inet_server_addr).as_str());
+        if let Some(addr) = &info.inet_server_addr {
+            span.record("net.peer.ip", format!("{}", addr).as_str());
+        }
         span.record("net.peer.port", info.inet_server_port);
 
         Ok(InstrumentedPgConnection { inner: conn, info })
@@ -143,7 +149,7 @@ impl Connection for InstrumentedPgConnection {
             db.system="postgresql",
             db.version=%self.info.version,
             otel.kind="client",
-            net.peer.ip=%self.info.inet_server_addr,
+            net.peer.ip=%self.peer_ip_str(),
             net.peer.port=%self.info.inet_server_port,
         ),
         skip(self, f),
@@ -162,7 +168,7 @@ impl Connection for InstrumentedPgConnection {
             db.system="postgresql",
             db.version=%self.info.version,
             otel.kind="client",
-            net.peer.ip=%self.info.inet_server_addr,
+            net.peer.ip=%self.peer_ip_str(),
             net.peer.port=%self.info.inet_server_port,
         ),
         skip(self, source),
@@ -181,7 +187,7 @@ impl Connection for InstrumentedPgConnection {
             db.system="postgresql",
             db.version=%self.info.version,
             otel.kind="client",
-            net.peer.ip=%self.info.inet_server_addr,
+            net.peer.ip=%self.peer_ip_str(),
             net.peer.port=%self.info.inet_server_port,
         ),
         skip(self),
@@ -196,7 +202,7 @@ impl Connection for InstrumentedPgConnection {
             db.system="postgresql",
             db.version=%self.info.version,
             otel.kind="client",
-            net.peer.ip=%self.info.inet_server_addr,
+            net.peer.ip=%self.peer_ip_str(),
             net.peer.port=%self.info.inet_server_port,
         ),
         skip(self),
@@ -211,7 +217,7 @@ impl Connection for InstrumentedPgConnection {
             db.system="postgresql",
             db.version=%self.info.version,
             otel.kind="client",
-            net.peer.ip=%self.info.inet_server_addr,
+            net.peer.ip=%self.peer_ip_str(),
             net.peer.port=%self.info.inet_server_port,
         ),
         skip(self, instrumentation)
@@ -239,7 +245,7 @@ impl LoadConnection<DefaultLoadingMode> for InstrumentedPgConnection {
                 db.system="postgresql",
                 db.version=%self.info.version,
                 otel.kind="client",
-                net.peer.ip=%self.info.inet_server_addr,
+                net.peer.ip=%self.peer_ip_str(),
                 net.peer.port=%self.info.inet_server_port,
                 db.statement=%diesel::debug_query(&source),
             ),
@@ -255,7 +261,7 @@ impl LoadConnection<DefaultLoadingMode> for InstrumentedPgConnection {
                 db.system="postgresql",
                 db.version=%self.info.version,
                 otel.kind="client",
-                net.peer.ip=%self.info.inet_server_addr,
+                net.peer.ip=%self.peer_ip_str(),
                 net.peer.port=%self.info.inet_server_port,
             ),
             skip(self, source),
@@ -290,7 +296,7 @@ impl LoadConnection<PgRowByRowLoadingMode> for InstrumentedPgConnection {
             db.system="postgresql",
             db.version=%self.info.version,
             otel.kind="client",
-            net.peer.ip=%self.info.inet_server_addr,
+            net.peer.ip=%self.peer_ip_str(),
             net.peer.port=%self.info.inet_server_port,
         ),
         skip(self, source),
@@ -321,13 +327,21 @@ impl GetPgMetadataCache for InstrumentedPgConnection {
 }
 
 impl InstrumentedPgConnection {
+    fn peer_ip_str(&self) -> String {
+        self.info
+            .inet_server_addr
+            .as_ref()
+            .map(|addr| addr.to_string())
+            .unwrap_or_else(|| "unknown".to_string())
+    }
+
     #[instrument(
         fields(
             db.name=%self.info.current_database,
             db.system="postgresql",
             db.version=%self.info.version,
             otel.kind="client",
-            net.peer.ip=%self.info.inet_server_addr,
+            net.peer.ip=%self.peer_ip_str(),
             net.peer.port=%self.info.inet_server_port,
         ),
         skip(self),
