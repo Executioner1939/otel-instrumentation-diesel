@@ -359,9 +359,11 @@ mod tests {
 
     #[test]
     fn test_get_info_on_establish() {
-        InstrumentedPgConnection::establish(
-            &std::env::var("POSTGRESQL_URL").expect("no POSTGRESQL_URL env var specified"),
-        )
-        .expect("failed to establish connection or collect info");
+        if let Ok(database_url) = std::env::var("POSTGRESQL_URL") {
+            InstrumentedPgConnection::establish(&database_url)
+                .expect("failed to establish connection or collect info");
+        } else {
+            println!("Skipping test_get_info_on_establish: POSTGRESQL_URL not set");
+        }
     }
 }
