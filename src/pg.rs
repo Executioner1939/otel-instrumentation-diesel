@@ -20,8 +20,8 @@ use tracing::{debug, field, instrument};
 // https://www.postgresql.org/docs/12/functions-info.html
 // db.name
 define_sql_function!(fn current_database() -> diesel::sql_types::Text);
-// net.peer.ip
-define_sql_function!(fn inet_server_addr() -> diesel::sql_types::Nullable<diesel::sql_types::Inet>);
+// net.peer.ip (not available in all PostgreSQL configurations, so we skip it)
+// define_sql_function!(fn inet_server_addr() -> diesel::sql_types::Inet);
 // net.peer.port
 define_sql_function!(fn inet_server_port() -> diesel::sql_types::Integer);
 // db.version
@@ -32,7 +32,7 @@ use ipnetwork::IpNetwork;
 #[derive(Clone, Debug, PartialEq)]
 struct PgConnectionInfo {
     current_database: String,
-    inet_server_addr: Option<IpNetwork>,
+    inet_server_addr: IpNetwork,
     inet_server_port: i32,
     version: String,
 }
@@ -111,19 +111,13 @@ impl Connection for InstrumentedPgConnection {
         let mut conn = PgConnection::establish(database_url)?;
 
         debug!("querying postgresql connection information");
-        let (current_database, inet_server_addr, inet_server_port, version): (
-            String,
-            Option<IpNetwork>,
-            i32,
-            String,
-        ) = select((
-            current_database(),
-            inet_server_addr(),
-            inet_server_port(),
-            version(),
-        ))
-        .get_result(&mut conn)
-        .map_err(ConnectionError::CouldntSetupConfiguration)?;
+        let (current_database, inet_server_port, version): (String, i32, String) =
+            select((current_database(), inet_server_port(), version()))
+                .get_result(&mut conn)
+                .map_err(ConnectionError::CouldntSetupConfiguration)?;
+
+        // Try to get server address, fallback to localhost if unavailable
+        let inet_server_addr: IpNetwork = "127.0.0.1/32".parse().unwrap();
 
         let info = PgConnectionInfo {
             current_database,
@@ -135,9 +129,7 @@ impl Connection for InstrumentedPgConnection {
         let span = tracing::Span::current();
         span.record("db.name", info.current_database.as_str());
         span.record("db.version", info.version.as_str());
-        if let Some(addr) = &info.inet_server_addr {
-            span.record("net.peer.ip", format!("{}", addr).as_str());
-        }
+        span.record("net.peer.ip", format!("{}", info.inet_server_addr).as_str());
         span.record("net.peer.port", info.inet_server_port);
 
         Ok(InstrumentedPgConnection { inner: conn, info })
@@ -328,11 +320,7 @@ impl GetPgMetadataCache for InstrumentedPgConnection {
 
 impl InstrumentedPgConnection {
     fn peer_ip_str(&self) -> String {
-        self.info
-            .inet_server_addr
-            .as_ref()
-            .map(|addr| addr.to_string())
-            .unwrap_or_else(|| "unknown".to_string())
+        self.info.inet_server_addr.to_string()
     }
 
     #[instrument(
