@@ -155,6 +155,11 @@ impl MigrationConnection for InstrumentedSqliteConnection {
 }
 
 impl InstrumentedSqliteConnection {
+    /// Execute a transaction with IMMEDIATE lock mode.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the transaction fails or if the closure returns an error.
     #[instrument(fields(db.system="sqlite", otel.kind="client"), skip(self, f))]
     pub fn immediate_transaction<T, E, F>(&mut self, f: F) -> Result<T, E>
     where
@@ -164,6 +169,11 @@ impl InstrumentedSqliteConnection {
         self.inner.immediate_transaction(f)
     }
 
+    /// Execute a transaction with EXCLUSIVE lock mode.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the transaction fails or if the closure returns an error.
     #[instrument(fields(db.system="sqlite", otel.kind="client"), skip(self, f))]
     pub fn exclusive_transaction<T, E, F>(&mut self, f: F) -> Result<T, E>
     where
